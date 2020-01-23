@@ -3,8 +3,7 @@ Make the json look like this:
 ```
 {
 event: {
-  price_levels: {
-    level_id_number: {
+  price_levels: [{
       level_id: 123,
       level: "",
       description: "",
@@ -17,9 +16,9 @@ event: {
         cancelled: false,
         status: 12
       ]
-    },
-    level_id_number2: {
-    }
+    },...
   }
 }
 ```
+
+Remember to copy `config-example.js` to `config.js` and update the information as appropriate.
