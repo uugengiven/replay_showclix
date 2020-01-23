@@ -36,6 +36,7 @@ const alterData = (eventinfo, ticketinfo) => {
       full_ticket.purchase_for = ticket[1].purchase_for;
       full_ticket.email = sale[1].email;
       full_ticket.phone = sale[1].phone;
+      full_ticket.status = ticket[1].status;
       results[ticket[1].pricing_level_id].tickets.push(full_ticket);
     });
 
@@ -45,6 +46,7 @@ const alterData = (eventinfo, ticketinfo) => {
       full_ticket.purchase_for = ticket[1].purchase_for;
       full_ticket.email = sale[1].email;
       full_ticket.phone = sale[1].phone;
+      full_ticket.status = ticket[1].status;
       results[ticket[1].pricing_level_id].tickets.push(full_ticket);
     });
   });
