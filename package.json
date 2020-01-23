@@ -9,7 +9,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+<<<<<<< HEAD
     "@azure/cosmos": "^3.5.3",
+=======
+    "cosmos": "^0.1.2",
+>>>>>>> build_form_of_json
     "dotenv": "^8.2.0"
   }
 }
