@@ -38,6 +38,7 @@ const alterData = (eventinfo, ticketinfo) => {
       full_ticket.phone = sale[1].phone;
       full_ticket.status = ticket[1].status;
       results[ticket[1].pricing_level_id].tickets.push(full_ticket);
+      event.price_levels[id_map[ticket[1].pricing_level_id]].tickets.push(full_ticket);
     });
 
     Object.entries(sale[1].cancel_set).map(ticket => {
@@ -48,6 +49,7 @@ const alterData = (eventinfo, ticketinfo) => {
       full_ticket.phone = sale[1].phone;
       full_ticket.status = ticket[1].status;
       results[ticket[1].pricing_level_id].tickets.push(full_ticket);
+      event.price_levels[id_map[ticket[1].pricing_level_id]].tickets.push(full_ticket);
     });
   });
 
