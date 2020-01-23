@@ -23,7 +23,7 @@ const cosmosdb = {
     },
 
     addItem: async (item) => {
-        const { body: doc } = await this.container.items.create(item);
+        const { body: doc } = await this.container.items.upsert(item);
         // const body = await container.items.create(item);
         // const doc = body.doc;
         return doc;
@@ -45,7 +45,8 @@ const cosmosdb = {
     },
 
     updateItem: async(item) => {
-        const oldItem = await this.getItemById(item.id);
+//        console.log(getItemById);
+        const oldItem = await this.container.item(item.id).read();
         const newItem = {...oldItem, ...item};
 
         const { body: replaced } = await this.container.item(newItem.id).replace(newItem);

@@ -12,7 +12,7 @@ const requestHandler = async (request, response) => {
     {
         case "/":
             results = alterData(event, data);
-            //cosmosdb.addItem(results);
+            pushToCosmos(results);
             break;
         case "/tickets":
             results = await getAllTickets("15192616");
@@ -30,9 +30,19 @@ const requestHandler = async (request, response) => {
     response.end()
 }
 
+const pushToCosmos = (data) => {
+  data.price_levels.map(pl => {
+    pl.event = data.event;
+    pl.event_description = data.event_description;
+    pl.event_id = data.event_id;
+    pl.type = "Price Level";
+    cosmosdb.addItem(pl);
+  });
+}
+
 const getPriceLevels = async () => {
   const query = {
-    query: "SELECT p.level, p.description, p.level_id FROM r JOIN p in r.price_levels",
+    query: "SELECT p.level, p.description, p.level_id FROM p WHERE p.type='Price Level'",
     //query: "SELECT r.price_levels.tickets FROM root AS r WHERE r.price_levels.level=@name",
   };
   const results = await cosmosdb.queryItems(query);
@@ -41,7 +51,7 @@ const getPriceLevels = async () => {
 
 const getAllTickets = async (id) => {
   const query = {
-    query: "SELECT p.level, p.tickets FROM root AS r JOIN p IN r.price_levels WHERE p.level_id=@id",
+    query: "SELECT p.level, p.tickets FROM p WHERE p.level_id=@id",
     //query: "SELECT r.price_levels.tickets FROM root AS r WHERE r.price_levels.level=@name",
     parameters: [
         {
@@ -66,6 +76,7 @@ const alterData = (eventinfo, ticketinfo) => {
   Object.entries(eventinfo.price_levels).map((level, index) => {
     let curr_level = {};
     curr_level = {...level[1], tickets: []};
+    curr_level.id = curr_level.level_id;
     event.price_levels.push(curr_level);
     id_map[curr_level.level_id] = index;
   })
