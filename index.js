@@ -2,8 +2,8 @@ require('dotenv').config();
 const http = require('http');
 const cosmosdb = require('./cosmos.js');
 const port = process.env.PORT || 3000;
-const data = require('./json_data/data.json');
-const event = require('./json_data/event.json');
+const data = {};// require('./json_data/data.json');
+const event = {}; //require('./json_data/event.json');
 
 const requestHandler = async (request, response) => {
     console.log(request.url)
