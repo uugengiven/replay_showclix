@@ -32,19 +32,19 @@ const alterData = (eventinfo, ticketinfo) => {
   Object.entries(ticketinfo).map(sale => {
     Object.entries(sale[1].ticket_set).map(ticket => {
       let full_ticket = {cancelled: false};
+      full_ticket.ticket_id = ticket[1].ticket_id;
+      full_ticket.purchase_for = ticket[1].purchase_for;
       full_ticket.email = sale[1].email;
       full_ticket.phone = sale[1].phone;
-      full_ticket.purchase_for = ticket[1].purchase_for;
-      full_ticket.ticket_id = ticket[1].ticket_id;
       results[ticket[1].pricing_level_id].tickets.push(full_ticket);
     });
 
     Object.entries(sale[1].cancel_set).map(ticket => {
       let full_ticket = {cancelled: true};
+      full_ticket.ticket_id = ticket[1].ticket_id;
+      full_ticket.purchase_for = ticket[1].purchase_for;
       full_ticket.email = sale[1].email;
       full_ticket.phone = sale[1].phone;
-      full_ticket.purchase_for = ticket[1].purchase_for;
-      full_ticket.ticket_id = ticket[1].ticket_id;
       results[ticket[1].pricing_level_id].tickets.push(full_ticket);
     });
   });
