@@ -10,7 +10,7 @@ const requestHandler = async (request, response) => {
     let results = {};
     switch(request.url)
     {
-        case "/":
+        case "/updatecosmos":
             results = alterData(event, data);
             pushToCosmos(results);
             break;
