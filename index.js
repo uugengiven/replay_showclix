@@ -1,34 +1,60 @@
 require('dotenv').config();
 const http = require('http');
+const express = require('express');
+const cors = require('cors')
+const app = express();
 const cosmosdb = require('./cosmos.js');
-const port = process.env.PORT || 3000;
+const port = process.env.PORT;
 const data = {};// require('./json_data/data.json');
 const event = {}; //require('./json_data/event.json');
 
-const requestHandler = async (request, response) => {
-    console.log(request.url)
-    let results = {};
-    switch(request.url)
-    {
-        case "/updatecosmos":
-            results = alterData(event, data);
-            pushToCosmos(results);
-            break;
-        case "/tickets":
-            results = await getAllTickets("15192616");
-            //console.log(results);
-            break;
-        case "/levels":
-            results = await getPriceLevels();
-            break;
-        default:
-            results = {test: "you hit another url, weirdo"};
-            break;
-    }
-    response.setHeader('Content-Type', 'application/json');
-    response.write(JSON.stringify(results));
-    response.end()
-}
+app.use(cors());
+
+// Setup express routes
+app.get('/levels', async function (req, res) {
+  const results = await getPriceLevels();
+  res.json(results);
+})
+
+app.get('/tickets/:levelId', async function (req, res) {
+  const results = await getAllTickets(req.params.levelId);
+  res.json(results);
+})
+
+app.get('/updatecosmos', function (req, res) {
+  const results = alterdata(event, data);
+  pushToCosmos(results);
+  res.send("Updates sent over")
+})
+
+app.get('/', function (req, res) {
+  res.send("there is nothing here for you")
+})
+
+// const requestHandler = async (request, response) => {
+//     console.log(request.url)
+//     let results = {};
+//     switch(request.url)
+//     {
+//         case "/updatecosmos":
+//             results = alterData(event, data);
+//             pushToCosmos(results);
+//             break;
+//         case "/tickets":
+//             results = await getAllTickets("15192616");
+//             //console.log(results);
+//             break;
+//         case "/levels":
+//             results = await getPriceLevels();
+//             break;
+//         default:
+//             results = {test: "you hit another url, weirdo"};
+//             break;
+//     }
+//     response.setHeader('Content-Type', 'application/json');
+//     response.write(JSON.stringify(results));
+//     response.end()
+// }
 
 const pushToCosmos = (data) => {
   data.price_levels.map(pl => {
@@ -43,7 +69,6 @@ const pushToCosmos = (data) => {
 const getPriceLevels = async () => {
   const query = {
     query: "SELECT p.level, p.description, p.level_id FROM p WHERE p.type='Price Level'",
-    //query: "SELECT r.price_levels.tickets FROM root AS r WHERE r.price_levels.level=@name",
   };
   const results = await cosmosdb.queryItems(query);
   return results;
@@ -52,7 +77,6 @@ const getPriceLevels = async () => {
 const getAllTickets = async (id) => {
   const query = {
     query: "SELECT p.level, p.tickets FROM p WHERE p.level_id=@id",
-    //query: "SELECT r.price_levels.tickets FROM root AS r WHERE r.price_levels.level=@name",
     parameters: [
         {
             name: "@id",
@@ -106,19 +130,10 @@ const alterData = (eventinfo, ticketinfo) => {
   return event;
 }
 
-const server = http.createServer(requestHandler)
-
 cosmosdb.init()
 .catch((err) => {
     console.log("Init failed!", err);
     // close everything somehow
 });
 
-server.listen(port, (err) => {
-  if (err) {
-    return console.log('something bad happened', err)
-  }
-
-  console.log(`server is listening on ${port}`)
-})
-
+app.listen(port, () => console.log(`Example app listening on port ${port}!`))
