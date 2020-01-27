@@ -133,8 +133,10 @@ const fillTicket = (sale, ticket, cancel_status) => {
   let full_ticket = {cancelled: cancel_status};
   full_ticket.ticket_id = ticket[1].ticket_id;
   full_ticket.purchase_for = ticket[1].purchase_for;
-  full_ticket.first_name = fullname[0];
-  full_ticket.last_name = fullname[(fullname.length-1)];
+  if(fullname != ["null"]) {
+    full_ticket.first_name = fullname[0];
+    full_ticket.last_name = fullname[(fullname.length-1)];
+  }
   full_ticket.email = sale[1].email;
   full_ticket.phone = sale[1].phone;
   full_ticket.status = ticket[1].status;
