@@ -5,8 +5,10 @@ const cors = require('cors')
 const app = express();
 const cosmosdb = require('./cosmos.js');
 const port = process.env.PORT;
-const data = {};// require('./json_data/data.json');
-const event = {}; //require('./json_data/event.json');
+const event = require('./json_data/event.json');
+const data = require('./json_data/data.json');
+//const event = {};
+//const data = {};
 
 app.use(cors());
 
@@ -22,7 +24,7 @@ app.get('/tickets/:levelId', async function (req, res) {
 })
 
 app.get('/updatecosmos', function (req, res) {
-  const results = alterdata(event, data);
+  const results = alterData(event, data);
   pushToCosmos(results);
   res.send("Updates sent over")
 })
@@ -107,27 +109,37 @@ const alterData = (eventinfo, ticketinfo) => {
 
   Object.entries(ticketinfo).map(sale => {
     Object.entries(sale[1].ticket_set).map(ticket => {
-      let full_ticket = {cancelled: false};
-      full_ticket.ticket_id = ticket[1].ticket_id;
-      full_ticket.purchase_for = ticket[1].purchase_for;
-      full_ticket.email = sale[1].email;
-      full_ticket.phone = sale[1].phone;
-      full_ticket.status = ticket[1].status;
+      let full_ticket = fillTicket(sale, ticket, false);
       event.price_levels[id_map[ticket[1].pricing_level_id]].tickets.push(full_ticket);
     });
 
     Object.entries(sale[1].cancel_set).map(ticket => {
-      let full_ticket = {cancelled: true};
-      full_ticket.ticket_id = ticket[1].ticket_id;
-      full_ticket.purchase_for = ticket[1].purchase_for;
-      full_ticket.email = sale[1].email;
-      full_ticket.phone = sale[1].phone;
-      full_ticket.status = ticket[1].status;
+      let full_ticket = fillTicket(sale, ticket, true);
       event.price_levels[id_map[ticket[1].pricing_level_id]].tickets.push(full_ticket);
     });
   });
 
   return event;
+}
+
+const fillTicket = (sale, ticket, cancel_status) => {
+
+  let fullname = ["null"];
+  if(ticket[1].purchase_for != null) {
+    fullname = ticket[1].purchase_for;
+    fullname = fullname.split(" ");
+  }
+
+  let full_ticket = {cancelled: cancel_status};
+  full_ticket.ticket_id = ticket[1].ticket_id;
+  full_ticket.purchase_for = ticket[1].purchase_for;
+  full_ticket.first_name = fullname[0];
+  full_ticket.last_name = fullname[(fullname.length-1)];
+  full_ticket.email = sale[1].email;
+  full_ticket.phone = sale[1].phone;
+  full_ticket.status = ticket[1].status;
+
+  return full_ticket;
 }
 
 cosmosdb.init()
