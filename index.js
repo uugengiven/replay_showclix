@@ -133,7 +133,7 @@ const fillTicket = (sale, ticket, cancel_status) => {
   let full_ticket = {cancelled: cancel_status};
   full_ticket.ticket_id = ticket[1].ticket_id;
   full_ticket.purchase_for = ticket[1].purchase_for;
-  if(fullname != ["null"]) {
+  if(ticket[1].purchase_for != null) {
     full_ticket.first_name = fullname[0];
     full_ticket.last_name = fullname[(fullname.length-1)];
   }
