@@ -5,10 +5,10 @@ const cors = require('cors')
 const app = express();
 const cosmosdb = require('./cosmos.js');
 const port = process.env.PORT;
-const event = require('./json_data/event.json');
-const data = require('./json_data/data.json');
-//const event = {};
-//const data = {};
+// const event = require('./json_data/event.json');
+// const data = require('./json_data/data.json');
+const event = {};
+const data = {};
 
 app.use(cors());
 
