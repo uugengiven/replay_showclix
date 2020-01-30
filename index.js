@@ -5,10 +5,10 @@ const cors = require('cors')
 const app = express();
 const cosmosdb = require('./cosmos.js');
 const port = process.env.PORT;
-// event = require('./json_data/event.json');
-// data = require('./json_data/data.json');
-const event = {};
-const data = {};
+event = require('./json_data/event.json');
+data = require('./json_data/data.json');
+// const event = {};
+// const data = {};
 
 app.use(cors());
 
@@ -130,6 +130,7 @@ const fillTicket = (sale, ticket, cancel_status) => {
     fullname = fullname.split(" ");
   }
   else if (sale[1].purchase_for != null) {
+    ticket[1].purchase_for = sale[1].purchase_for;
     fullname = sale[1].purchase_for;
     fullname = fullname.split(" ");
   }
@@ -140,6 +141,9 @@ const fillTicket = (sale, ticket, cancel_status) => {
   if(fullname != ["null"]) {
     full_ticket.first_name = fullname[0];
     full_ticket.last_name = fullname[(fullname.length-1)];
+    if (full_ticket.last_name.toUpperCase() === "JR" || full_ticket.last_name.toUpperCase() === "SR" || full_ticket.last_name.toUpperCase() === "II" || full_ticket.last_name.toUpperCase() === "III") {
+      full_ticket.last_name = fullname[(fullname.length-2)];
+    }
   }
   full_ticket.email = sale[1].email;
   full_ticket.phone = sale[1].phone;
