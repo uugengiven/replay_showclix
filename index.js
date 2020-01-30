@@ -5,8 +5,8 @@ const cors = require('cors')
 const app = express();
 const cosmosdb = require('./cosmos.js');
 const port = process.env.PORT;
-// const event = require('./json_data/event.json');
-// const data = require('./json_data/data.json');
+// event = require('./json_data/event.json');
+// data = require('./json_data/data.json');
 const event = {};
 const data = {};
 
@@ -129,11 +129,15 @@ const fillTicket = (sale, ticket, cancel_status) => {
     fullname = ticket[1].purchase_for;
     fullname = fullname.split(" ");
   }
+  else if (sale[1].purchase_for != null) {
+    fullname = sale[1].purchase_for;
+    fullname = fullname.split(" ");
+  }
 
   let full_ticket = {cancelled: cancel_status};
   full_ticket.ticket_id = ticket[1].ticket_id;
   full_ticket.purchase_for = ticket[1].purchase_for;
-  if(ticket[1].purchase_for != null) {
+  if(fullname != ["null"]) {
     full_ticket.first_name = fullname[0];
     full_ticket.last_name = fullname[(fullname.length-1)];
   }
