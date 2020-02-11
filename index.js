@@ -1,4 +1,7 @@
 require('dotenv').config();
+const fetch = require("node-fetch");
+const config = require("./config");
+const FormData = require('form-data');
 const http = require('http');
 const express = require('express');
 const cors = require('cors')
@@ -13,6 +16,11 @@ data = require('./json_data/data.json');
 app.use(cors());
 
 // Setup express routes
+app.get('/getkey', async function (req, res) {
+  const results = await getShowclixAuth();
+  const token = results.token;
+})
+
 app.get('/levels', async function (req, res) {
   const results = await getPriceLevels();
   res.json(results);
@@ -57,6 +65,27 @@ app.get('/', function (req, res) {
 //     response.write(JSON.stringify(results));
 //     response.end()
 // }
+
+const getShowclixAuth = async () => {
+  let formData = new FormData();
+  formData.append('email', config.showclixId);
+  formData.append('password', config.showclixPW);
+
+  const response = await fetch('https://admin.showclix.com/api/registration', {
+    method: 'POST',
+    body: formData
+  })
+  .then((response) => response.json())
+  .then((result) => {
+    console.log('Success:', result);
+    return result;
+  })
+  .catch((error) => {
+    console.error('Error:', error);
+  });
+
+  return response;
+}
 
 const pushToCosmos = (data) => {
   data.price_levels.map(pl => {
