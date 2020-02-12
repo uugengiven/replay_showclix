@@ -1,5 +1,5 @@
 require('dotenv').config();
-const fetch = require("node-fetch");
+const fetch = require('node-fetch');
 const config = require("./config");
 const FormData = require('form-data');
 const http = require('http');
@@ -16,9 +16,24 @@ data = require('./json_data/data.json');
 app.use(cors());
 
 // Setup express routes
-app.get('/getkey', async function (req, res) {
-  const results = await getShowclixAuth();
-  const token = results.token;
+app.get('/showclix', async function (req, res) {
+  const showclixAuth = await getShowclixAuth();
+  const token = showclixAuth.token;
+  
+  const replayEvents = await getReplayEvents(token);
+
+  var allReplayEventsArr = Object.entries(replayEvents);
+  var thisYearEventsArr = [];
+
+  const testEventStart = "2020-01-01 08:00:00";
+  allReplayEventsArr.forEach(([event, info]) => 
+    {if(info.event_start > testEventStart) {
+      thisYearEventsArr.push([event, info]);
+    }
+    
+    });
+  
+  res.json(thisYearEventsArr);
 })
 
 app.get('/levels', async function (req, res) {
@@ -66,6 +81,18 @@ app.get('/', function (req, res) {
 //     response.end()
 // }
 
+const getReplayEvents = async (token) => {
+  const response = await fetch('https://api.showclix.com/Seller/21925/events', {
+    method: 'GET',
+    headers: {
+      'X-API-Token': token,
+    },
+  })
+  .then((response) => response.json());
+
+  return response;
+}
+
 const getShowclixAuth = async () => {
   let formData = new FormData();
   formData.append('email', config.showclixId);
@@ -77,7 +104,7 @@ const getShowclixAuth = async () => {
   })
   .then((response) => response.json())
   .then((result) => {
-    console.log('Success:', result);
+    // console.log('Success:', result);
     return result;
   })
   .catch((error) => {
