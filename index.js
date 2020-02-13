@@ -1,18 +1,48 @@
 require('dotenv').config();
+const fetch = require('node-fetch');
+const config = require("./config");
+const FormData = require('form-data');
 const http = require('http');
 const express = require('express');
 const cors = require('cors')
 const app = express();
 const cosmosdb = require('./cosmos.js');
 const port = process.env.PORT;
-event = require('./json_data/event.json');
-data = require('./json_data/data.json');
-// const event = {};
-// const data = {};
+// event = require('./json_data/event.json');
+// data = require('./json_data/data.json');
+// let event = {};
+// let data = {};
 
 app.use(cors());
 
 // Setup express routes
+app.get('/showclix', async function (req, res) {
+  const showclixAuth = await getShowclixAuth();
+  const token = showclixAuth.token;
+  
+  const replayEvents = await getReplayEvents(token);
+
+  var allReplayEventsArr = Object.entries(replayEvents);
+  var thisYearEventsArr = [];
+
+  const testEventStart = "2020-01-01 08:00:00";
+  allReplayEventsArr.forEach(([event, info]) => {
+    if(info.event_start > testEventStart) {
+      thisYearEventsArr.push([event, info]);
+    }
+  });
+    
+
+  // console.log(thisYearEventsArr[0][1]);
+  thisYearEventsArr.forEach( async event => {
+    const data = await fetchTickets(event[0] , token);
+    // console.log(event[1]);
+    const results = alterData(event[1], data);
+    pushToCosmos(results);
+  });
+  res.json(thisYearEventsArr);
+})
+
 app.get('/levels', async function (req, res) {
   const results = await getPriceLevels();
   res.json(results);
@@ -31,6 +61,11 @@ app.get('/updatecosmos', function (req, res) {
 
 app.get('/', function (req, res) {
   res.send("there is nothing here for you")
+})
+
+app.get('/deleteAll', function (req, res) {
+  cosmosdb.deleteDatabase();
+  res.send("all deleted")
 })
 
 // const requestHandler = async (request, response) => {
@@ -57,6 +92,52 @@ app.get('/', function (req, res) {
 //     response.write(JSON.stringify(results));
 //     response.end()
 // }
+
+const getReplayEvents = async (token) => {
+  const response = await fetch('https://api.showclix.com/Seller/21925/events?follow[]=price_levels', {
+    method: 'GET',
+    headers: {
+      'X-API-Token': token,
+    },
+  })
+  .then((response) => response.json());
+
+  return response;
+}
+
+const fetchTickets = async (eventId, token) => {
+  console.log(eventId);
+  const response = await fetch(`https://api.showclix.com/Sale/search?event=${eventId}&start_date=01-01-2019&follow[]=ticket_set&follow[]=cancel_set`, {
+    method: 'GET',
+    headers: {
+      'X-API-Token': token,
+    },
+  })
+  .then((response) => response.json());
+
+  return response;
+}
+
+const getShowclixAuth = async () => {
+  let formData = new FormData();
+  formData.append('email', config.showclixId);
+  formData.append('password', config.showclixPW);
+
+  const response = await fetch('https://admin.showclix.com/api/registration', {
+    method: 'POST',
+    body: formData
+  })
+  .then((response) => response.json())
+  .then((result) => {
+    // console.log('Success:', result);
+    return result;
+  })
+  .catch((error) => {
+    console.error('Error:', error);
+  });
+
+  return response;
+}
 
 const pushToCosmos = (data) => {
   data.price_levels.map(pl => {
@@ -91,6 +172,7 @@ const getAllTickets = async (id) => {
 }
 
 const alterData = (eventinfo, ticketinfo) => {
+  // console.log(eventinfo, ticketinfo);
   let event = {};
   event.id = eventinfo.event_id;
   event.event_id = eventinfo.event_id;
