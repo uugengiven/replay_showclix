@@ -8,6 +8,7 @@ const cors = require('cors')
 const app = express();
 const cosmosdb = require('./cosmos.js');
 const port = process.env.PORT;
+const activeShowsArr = ['5643659','5937484','5937954','5643665']
 // event = require('./json_data/event.json');
 // data = require('./json_data/data.json');
 // let event = {};
@@ -35,8 +36,8 @@ app.get('/showclix', async function (req, res) {
 
   // console.log(thisYearEventsArr[0][1]);
   thisYearEventsArr.forEach( async event => {
+    console.log(event[1]);
     const data = await fetchTickets(event[0] , token);
-    // console.log(event[1]);
     const results = alterData(event[1], data);
     pushToCosmos(results);
   });
@@ -106,7 +107,6 @@ const getReplayEvents = async (token) => {
 }
 
 const fetchTickets = async (eventId, token) => {
-  console.log(eventId);
   const response = await fetch(`https://api.showclix.com/Sale/search?event=${eventId}&start_date=01-01-2019&follow[]=ticket_set&follow[]=cancel_set`, {
     method: 'GET',
     headers: {
@@ -151,7 +151,7 @@ const pushToCosmos = (data) => {
 
 const getPriceLevels = async () => {
   const query = {
-    query: "SELECT p.level, p.description, p.level_id FROM p WHERE p.type='Price Level'",
+    query: "SELECT p.level, p.description, p.level_id FROM p WHERE p.type='Price Level' AND p.active=true",
   };
   const results = await cosmosdb.queryItems(query);
   return results;
@@ -172,7 +172,6 @@ const getAllTickets = async (id) => {
 }
 
 const alterData = (eventinfo, ticketinfo) => {
-  // console.log(eventinfo, ticketinfo);
   let event = {};
   event.id = eventinfo.event_id;
   event.event_id = eventinfo.event_id;
@@ -200,6 +199,9 @@ const alterData = (eventinfo, ticketinfo) => {
       event.price_levels[id_map[ticket[1].pricing_level_id]].tickets.push(full_ticket);
     });
   });
+
+
+  event.active = activeShowsArr.includes(event.id);
 
   return event;
 }
