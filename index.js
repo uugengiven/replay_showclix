@@ -36,7 +36,7 @@ app.get('/showclix', async function (req, res) {
 
   // console.log(thisYearEventsArr[0][1]);
   thisYearEventsArr.forEach( async event => {
-    console.log(event[1]);
+    // console.log(event[1]);
     const data = await fetchTickets(event[0] , token);
     const results = alterData(event[1], data);
     pushToCosmos(results);
