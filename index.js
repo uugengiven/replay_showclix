@@ -8,7 +8,7 @@ const cors = require('cors')
 const app = express();
 const cosmosdb = require('./cosmos.js');
 const port = process.env.PORT;
-const activeShowsArr = ['5643659','5937484','5937954','5643665']
+const activeShowsArr = ['5643659','5937954','5643665']
 // event = require('./json_data/event.json');
 // data = require('./json_data/data.json');
 // let event = {};
@@ -200,8 +200,15 @@ const alterData = (eventinfo, ticketinfo) => {
     });
   });
 
-
   event.active = activeShowsArr.includes(event.id);
+
+  if (event.id == '5643659' || event.id == '5937954') {
+    console.log(event);
+    event.waitlist = true;
+  }
+  else {
+    event.waitlist = false;
+  }
 
   return event;
 }
