@@ -8,7 +8,13 @@ const cors = require('cors')
 const app = express();
 const cosmosdb = require('./cosmos.js');
 const port = process.env.PORT;
-const activeShowsArr = ['5643659','5937954','5643665']
+const activeShowsArr = [
+  '5643659', // Pinburgh Waitlist
+  '5937954', // WIPT Waitlist
+  // '5643665', // Replay FX 2020
+  '5937484',  // Competition Portal
+  // '5737397',  // Exhibitors
+]
 // event = require('./json_data/event.json');
 // data = require('./json_data/data.json');
 // let event = {};
@@ -33,10 +39,7 @@ app.get('/showclix', async function (req, res) {
     }
   });
     
-
-  // console.log(thisYearEventsArr[0][1]);
   thisYearEventsArr.forEach( async event => {
-    // console.log(event[1]);
     const data = await fetchTickets(event[0] , token);
     const results = alterData(event[1], data);
     pushToCosmos(results);
@@ -129,7 +132,6 @@ const getShowclixAuth = async () => {
   })
   .then((response) => response.json())
   .then((result) => {
-    // console.log('Success:', result);
     return result;
   })
   .catch((error) => {
@@ -151,7 +153,8 @@ const pushToCosmos = (data) => {
 
 const getPriceLevels = async () => {
   const query = {
-    query: "SELECT p.level, p.description, p.level_id FROM p WHERE p.type='Price Level' AND p.active=true",
+    // query: "SELECT * FROM p WHERE p.type='Price Level'",
+    query: "SELECT p.level, p.description, p.level_id, p.event, p.rpfx_active FROM p WHERE p.type='Price Level' AND p.rpfx_active",
   };
   const results = await cosmosdb.queryItems(query);
   return results;
@@ -159,14 +162,31 @@ const getPriceLevels = async () => {
 
 const getAllTickets = async (id) => {
   const query = {
-    query: "SELECT p.level, p.tickets FROM p WHERE p.level_id=@id",
+    query: "SELECT p.level, p.tickets FROM p WHERE p.level_id=@id OR p.level_id=@alt_id",
     parameters: [
         {
-            name: "@id",
-            value: id
-        }
+          name: "@id",
+          value: id
+        },
+        {
+          name: "@alt_id",
+          value: id
+      }
     ]
   };
+  
+  if(id==18453303) {
+    query.parameters[1].value = "18452774";
+  }
+  if(id==18452774) {
+    query.parameters[1].value = "18453303";
+  }
+  if(id==17427843) {
+    query.parameters[1].value = "18452773";
+  }
+  if(id==18452773) {
+    query.parameters[1].value = "17427843";
+  }
   const results = await cosmosdb.queryItems(query);
   return results;
 }
@@ -180,40 +200,41 @@ const alterData = (eventinfo, ticketinfo) => {
   event.price_levels = [];
   let id_map = {};
 
+  event.rpfx_active = activeShowsArr.includes(event.id);
+
   Object.entries(eventinfo.price_levels).map((level, index) => {
     let curr_level = {};
     curr_level = {...level[1], tickets: []};
     curr_level.id = curr_level.level_id;
+    curr_level.rpfx_active = event.rpfx_active;
+    curr_level.event_name = event.event;
     event.price_levels.push(curr_level);
     id_map[curr_level.level_id] = index;
   })
 
-  Object.entries(ticketinfo).map(sale => {
-    Object.entries(sale[1].ticket_set).map(ticket => {
-      let full_ticket = fillTicket(sale, ticket, false);
-      event.price_levels[id_map[ticket[1].pricing_level_id]].tickets.push(full_ticket);
-    });
-
-    Object.entries(sale[1].cancel_set).map(ticket => {
-      let full_ticket = fillTicket(sale, ticket, true);
-      event.price_levels[id_map[ticket[1].pricing_level_id]].tickets.push(full_ticket);
-    });
-  });
-
-  event.active = activeShowsArr.includes(event.id);
-
   if (event.id == '5643659' || event.id == '5937954') {
-    console.log(event);
     event.waitlist = true;
   }
   else {
     event.waitlist = false;
   }
 
+  Object.entries(ticketinfo).map(sale => {
+    Object.entries(sale[1].ticket_set).map(ticket => {
+      let full_ticket = fillTicket(sale, ticket, false, event.rpfx_active, event.waitlist);
+      event.price_levels[id_map[ticket[1].pricing_level_id]].tickets.push(full_ticket);
+    });
+
+    Object.entries(sale[1].cancel_set).map(ticket => {
+      let full_ticket = fillTicket(sale, ticket, true, event.rpfx_active, event.waitlist);
+      event.price_levels[id_map[ticket[1].pricing_level_id]].tickets.push(full_ticket);
+    });
+  });
+
   return event;
 }
 
-const fillTicket = (sale, ticket, cancel_status) => {
+const fillTicket = (sale, ticket, cancel_status, active_status, waitlist_status) => {
 
   let fullname = ["null"];
   if(ticket[1].purchase_for != null) {
@@ -239,6 +260,8 @@ const fillTicket = (sale, ticket, cancel_status) => {
   full_ticket.email = sale[1].email;
   full_ticket.phone = sale[1].phone;
   full_ticket.status = ticket[1].status;
+  full_ticket.rpfx_active = active_status;
+  full_ticket.waitlist_status = waitlist_status;
 
   return full_ticket;
 }
